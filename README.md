@@ -2,9 +2,6 @@
 
 [![Version](https://img.shields.io/badge/version-1.0-6d28d9?style=flat-square)](https://github.com/abbottis/logwerk/releases)
 [![License: MIT](https://img.shields.io/github/license/abbottis/logwerk?style=flat-square)](LICENSE)
-[![Last Commit](https://img.shields.io/github/last-commit/abbottis/logwerk?style=flat-square)](https://github.com/abbottis/logwerk/commits/main)
-[![Issues](https://img.shields.io/github/issues/abbottis/logwerk?style=flat-square)](https://github.com/abbottis/logwerk/issues)
-[![Stars](https://img.shields.io/github/stars/abbottis/logwerk?style=flat-square)](https://github.com/abbottis/logwerk/stargazers)
 
 [Changelog](changelog.md)
 
