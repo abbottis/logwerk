@@ -1,6 +1,6 @@
 # LogWerk - Server Log Analytics
 
-[![Version](https://img.shields.io/badge/version-1.0-6d28d9?style=flat-square)](https://github.com/abbottis/logwerk/releases)
+[![Version](https://img.shields.io/badge/version-1.0.1-6d28d9?style=flat-square)](https://github.com/abbottis/logwerk/releases)
 [![License: MIT](https://img.shields.io/github/license/abbottis/logwerk?style=flat-square)](LICENSE)
 
 [Changelog](changelog.md)

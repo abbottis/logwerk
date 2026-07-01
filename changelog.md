@@ -2,6 +2,14 @@
 
 All notable changes to the **LogWerk** project will be documented in this file.
 
+## [1.0.1] - 2026-07-01
+### Fixed
+- **Custom RegEx safety**: Custom log patterns are now validated to define all 9 required capture groups before use, replacing silent all-zero status/size data with a clear error message.
+- **Parser stability**: A pathological or exception-throwing custom regex no longer hangs the parser indefinitely — parse failures now surface as a visible error instead of an unresponsive progress bar.
+- **Date parsing robustness**: Timestamps that fail to parse now fall back to `null` instead of an invalid-but-truthy Date object, preventing corrupted values in charts, sorting, and session grouping.
+- **Session fingerprinting**: Client session grouping now uses a collision-safe key instead of a delimiter-joined string.
+- **Translation gaps**: The singular "1 Click" session label and the footer brand text are now fully localized instead of hardcoded English.
+
 ## [1.0] - 2026-07-01
 ### Added
 - **Zero backend, 100% client-side**: Pure HTML5, ES6 modules, and Tailwind CSS. Your log files never leave the browser.
