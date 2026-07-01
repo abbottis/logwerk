@@ -395,10 +395,25 @@ function getSelectedPreset() {
       // Build a basic regex object.
       // We will parse standard patterns using a basic array offset mapping.
       // E.g., remote IP, ident, user, timestamp, request, status, body size, referer, user agent
+      const compiled = new RegExp(regexVal);
+      const requiredGroups = 9;
+      // Count capture groups by matching an alternation against an empty
+      // string: the resulting match array length (minus the full match)
+      // tells us exactly how many capturing groups the pattern defines,
+      // without relying on any real input line.
+      const groupCount = new RegExp(compiled.source + '|').exec('').length - 1;
+      if (groupCount < requiredGroups) {
+        alert(
+          `Custom RegEx must define ${requiredGroups} capture groups in this exact order: ` +
+          'IP, Ident, User, Timestamp, Request, Status, Size, Referer, User-Agent. ' +
+          `Your pattern only defines ${groupCount}.`
+        );
+        return null;
+      }
       return {
         id: 'custom',
         name: 'Custom',
-        regex: new RegExp(regexVal),
+        regex: compiled,
         fields: {
           ip: 1,
           ident: 2,
@@ -1414,7 +1429,10 @@ function formatDuration(ms) {
 function groupEntriesIntoSessions() {
   const clientGroups = {};
   filteredEntries.forEach(entry => {
-    const fingerprint = entry.ip + '|||' + entry.userAgent;
+    // JSON.stringify quotes/escapes each part, so a crafted User-Agent
+    // containing the old '|||' separator can no longer collide two
+    // different (ip, userAgent) pairs into the same fingerprint.
+    const fingerprint = JSON.stringify([entry.ip, entry.userAgent]);
     if (!clientGroups[fingerprint]) {
       clientGroups[fingerprint] = [];
     }
@@ -1565,7 +1583,7 @@ function renderSessions() {
         
         <div class="flex items-center gap-4">
           <div class="text-right text-xs">
-            <span class="font-semibold text-slate-300">${session.entries.length} ${session.entries.length === 1 ? 'Click' : t('sessionClicks')}</span>
+            <span class="font-semibold text-slate-300">${session.entries.length} ${session.entries.length === 1 ? t('sessionClick') : t('sessionClicks')}</span>
             <span class="mx-1.5 text-slate-700">•</span>
             <span class="text-slate-400 font-medium">${formatDuration(sessionDuration)}</span>
           </div>

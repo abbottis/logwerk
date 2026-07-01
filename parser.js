@@ -103,6 +103,11 @@ export function parseLine(line, preset) {
       // Fallback parsing for custom formats
       parsedDate = new Date(rawTime);
     }
+    if (isNaN(parsedDate.getTime())) {
+      // Both attempts failed: treat as missing rather than an Invalid Date object,
+      // which is truthy and would silently corrupt downstream date-based logic.
+      parsedDate = null;
+    }
   }
 
   const uaString = fields.userAgent ? match[fields.userAgent] || '-' : '-';
@@ -134,7 +139,7 @@ export function parseLine(line, preset) {
  * @returns {Promise<Array>} Promise resolving to all parsed entries.
  */
 export function parseLogFileAsync(textContent, preset, onProgress) {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     // Split lines
     const lines = textContent.split(/\r?\n/);
     const totalLines = lines.length;
@@ -143,28 +148,36 @@ export function parseLogFileAsync(textContent, preset, onProgress) {
     const chunkSize = 2000; // Parse 2000 lines per tick to keep browser UI smooth
 
     function processChunk() {
-      const end = Math.min(currentIndex + chunkSize, totalLines);
-      for (let i = currentIndex; i < end; i++) {
-        const line = lines[i];
-        if (line && line.trim() !== '') {
-          const parsed = parseLine(line, preset);
-          if (parsed) {
-            entries.push(parsed);
+      try {
+        const end = Math.min(currentIndex + chunkSize, totalLines);
+        for (let i = currentIndex; i < end; i++) {
+          const line = lines[i];
+          if (line && line.trim() !== '') {
+            const parsed = parseLine(line, preset);
+            if (parsed) {
+              entries.push(parsed);
+            }
           }
         }
-      }
 
-      currentIndex = end;
+        currentIndex = end;
 
-      if (onProgress) {
-        onProgress(currentIndex, totalLines, entries.length);
-      }
+        if (onProgress) {
+          onProgress(currentIndex, totalLines, entries.length);
+        }
 
-      if (currentIndex < totalLines) {
-        // Schedule next chunk using requestAnimationFrame or setTimeout
-        requestAnimationFrame(processChunk);
-      } else {
-        resolve(entries);
+        if (currentIndex < totalLines) {
+          // Schedule next chunk using requestAnimationFrame or setTimeout
+          requestAnimationFrame(processChunk);
+        } else {
+          resolve(entries);
+        }
+      } catch (error) {
+        // A pathological custom regex (e.g. catastrophic backtracking or a
+        // RangeError on match) must reject the promise instead of throwing
+        // inside this rAF callback, where it would be uncatchable and leave
+        // the caller's await hanging forever.
+        reject(error);
       }
     }
 

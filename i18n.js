@@ -78,6 +78,7 @@ const TRANSLATIONS = {
     // Sessions
     tabLogAnalysis: 'Log Analysis',
     tabSessions: 'Session Journeys',
+    sessionClick: 'Click',
     sessionClicks: 'Clicks',
     sessionDuration: 'Duration',
     sessionPagesVisited: 'Pages Visited',
@@ -185,6 +186,7 @@ const TRANSLATIONS = {
     // Sessions
     tabLogAnalysis: 'Log-Analyse',
     tabSessions: 'Besucherverlauf',
+    sessionClick: 'Klick',
     sessionClicks: 'Klicks',
     sessionDuration: 'Dauer',
     sessionPagesVisited: 'Besuchte Seiten',
@@ -292,6 +294,7 @@ const TRANSLATIONS = {
     // Sessions
     tabLogAnalysis: 'Analyse des journaux',
     tabSessions: 'Parcours de session',
+    sessionClick: 'Clic',
     sessionClicks: 'Clics',
     sessionDuration: 'Durée',
     sessionPagesVisited: 'Pages visitées',
@@ -399,6 +402,7 @@ const TRANSLATIONS = {
     // Sessions
     tabLogAnalysis: 'Análisis de registros',
     tabSessions: 'Recorridos de sesión',
+    sessionClick: 'Clic',
     sessionClicks: 'Clics',
     sessionDuration: 'Duración',
     sessionPagesVisited: 'Páginas visitadas',
@@ -506,6 +510,7 @@ const TRANSLATIONS = {
     // Sessions
     tabLogAnalysis: 'Analisi log',
     tabSessions: 'Percorsi di sessione',
+    sessionClick: 'Clic',
     sessionClicks: 'Clic',
     sessionDuration: 'Durata',
     sessionPagesVisited: 'Pagine visitate',
@@ -613,6 +618,7 @@ const TRANSLATIONS = {
     // Sessions
     tabLogAnalysis: 'Аналіз логів',
     tabSessions: 'Сесії відвідувачів',
+    sessionClick: 'Клік',
     sessionClicks: 'Кліки',
     sessionDuration: 'Тривалість',
     sessionPagesVisited: 'Відвідані сторінки',
