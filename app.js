@@ -18,7 +18,13 @@ let charts = {
   os: null,
   bots: null,
   botProviders: null,
-  botTypes: null
+  botTypes: null,
+  referers: null,
+  contentTypes: null,
+  bandwidth: null,
+  protocols: null,
+  threats: null,
+  err404: null
 };
 
 // DOM Elements
@@ -38,8 +44,17 @@ const dashboardContent = document.getElementById('dashboard-content');
 const botAnalyticsPanel = document.getElementById('bot-analytics-panel');
 const tabBtnDashboard = document.getElementById('tab-btn-dashboard');
 const tabBtnSessions = document.getElementById('tab-btn-sessions');
+const tabBtnSecurity = document.getElementById('tab-btn-security');
 const panelDashboard = document.getElementById('panel-dashboard');
 const panelSessions = document.getElementById('panel-sessions');
+const panelSecurity = document.getElementById('panel-security');
+const trafficHeatmap = document.getElementById('traffic-heatmap');
+const secStatThreats = document.getElementById('sec-stat-threats');
+const secStatIps = document.getElementById('sec-stat-ips');
+const secStatAuth = document.getElementById('sec-stat-auth');
+const secIpsTable = document.getElementById('sec-ips-table');
+const secAuthTable = document.getElementById('sec-auth-table');
+const secEmptyState = document.getElementById('sec-empty-state');
 const sessionsContainer = document.getElementById('sessions-container');
 const filterSessionClicks = document.getElementById('filter-session-clicks');
 const filterSessionType = document.getElementById('filter-session-type');
@@ -148,6 +163,9 @@ window.addEventListener('languagechanged', () => {
     renderCharts();
     if (activeTab === 'sessions') {
       renderSessions();
+    }
+    if (activeTab === 'security') {
+      renderSecurity();
     }
   }
 });
@@ -298,6 +316,7 @@ function setupEventListeners() {
   // Tab selections
   tabBtnDashboard.addEventListener('click', () => switchTab('dashboard'));
   tabBtnSessions.addEventListener('click', () => switchTab('sessions'));
+  tabBtnSecurity.addEventListener('click', () => switchTab('security'));
 
   // Session filters
   filterSessionClicks.addEventListener('change', () => {
@@ -436,7 +455,27 @@ function getSelectedPreset() {
 }
 
 // File Reading & Parser Coordinator
-function handleLogFile(file) {
+async function isGzipFile(file) {
+  // gzip magic bytes: 0x1F 0x8B — checked instead of the file extension so
+  // drag & drop works regardless of how the rotated file is named
+  if (file.size < 2) return false;
+  const header = new Uint8Array(await file.slice(0, 2).arrayBuffer());
+  return header[0] === 0x1f && header[1] === 0x8b;
+}
+
+async function readLogFile(file) {
+  if (await isGzipFile(file)) {
+    if (typeof DecompressionStream === 'undefined') {
+      throw new Error(t('gzipUnsupported'));
+    }
+    statusMessage.textContent = t('decompressingStatus');
+    const decompressed = file.stream().pipeThrough(new DecompressionStream('gzip'));
+    return new Response(decompressed).text();
+  }
+  return file.text();
+}
+
+async function handleLogFile(file) {
   const preset = getSelectedPreset();
   if (!preset) return;
 
@@ -450,59 +489,54 @@ function handleLogFile(file) {
   parserProgressContainer.classList.remove('hidden');
   parserProgressBar.style.width = '0%';
 
-  const reader = new FileReader();
+  const startTime = performance.now();
 
-  reader.onload = async function(event) {
-    const content = event.target.result;
-    const startTime = performance.now();
+  try {
+    const content = await readLogFile(file);
 
-    try {
-      logEntries = await parseLogFileAsync(content, preset, (parsedCount, totalLines) => {
-        // Update Progress bar
-        const percent = Math.round((parsedCount / totalLines) * 100);
-        parserProgressBar.style.width = percent + '%';
-        statusMessage.textContent = `${t('parsingStatus')} (${percent}%)`;
-      });
+    logEntries = await parseLogFileAsync(content, preset, (parsedCount, totalLines) => {
+      // Update Progress bar
+      const percent = Math.round((parsedCount / totalLines) * 100);
+      parserProgressBar.style.width = percent + '%';
+      statusMessage.textContent = `${t('parsingStatus')} (${percent}%)`;
+    });
 
-      const duration = Math.round(performance.now() - startTime);
+    const duration = Math.round(performance.now() - startTime);
 
-      if (logEntries.length === 0) {
-        throw new Error('No lines matched the selected log format.');
-      }
-
-      // Success layout
-      statusSpinner.classList.add('hidden');
-      statusIconSuccess.classList.remove('hidden');
-      parserProgressContainer.classList.add('hidden');
-      statusCard.classList.add('border-emerald-500/30', 'bg-emerald-950/10');
-      statusMessage.textContent = t('parsedSuccess', { count: logEntries.length, time: duration });
-
-      // Populate Method select filter dynamically
-      populateMethodFilter();
-      populateBotFilter();
-
-      // Show Dashboard content
-      dashboardContent.classList.remove('hidden');
-      
-      // Update data and draw UI
-      applyFilters();
-
-      // Save to IndexedDB cache
-      const selectedPresetVal = document.querySelector('input[name="preset"]:checked').value;
-      const customRegexVal = customRegexInput.value;
-      saveLogToCache(file.name, content, selectedPresetVal, customRegexVal);
-
-    } catch (error) {
-      console.error(error);
-      statusSpinner.classList.add('hidden');
-      statusIconError.classList.remove('hidden');
-      parserProgressContainer.classList.add('hidden');
-      statusCard.classList.add('border-rose-500/30', 'bg-rose-950/10');
-      statusMessage.textContent = t('parseFailed') + ` (${error.message})`;
+    if (logEntries.length === 0) {
+      throw new Error('No lines matched the selected log format.');
     }
-  };
 
-  reader.readAsText(file);
+    // Success layout
+    statusSpinner.classList.add('hidden');
+    statusIconSuccess.classList.remove('hidden');
+    parserProgressContainer.classList.add('hidden');
+    statusCard.classList.add('border-emerald-500/30', 'bg-emerald-950/10');
+    statusMessage.textContent = t('parsedSuccess', { count: logEntries.length, time: duration });
+
+    // Populate Method select filter dynamically
+    populateMethodFilter();
+    populateBotFilter();
+
+    // Show Dashboard content
+    dashboardContent.classList.remove('hidden');
+
+    // Update data and draw UI
+    applyFilters();
+
+    // Save to IndexedDB cache (decompressed content, so restore skips the gzip step)
+    const selectedPresetVal = document.querySelector('input[name="preset"]:checked').value;
+    const customRegexVal = customRegexInput.value;
+    saveLogToCache(file.name, content, selectedPresetVal, customRegexVal);
+
+  } catch (error) {
+    console.error(error);
+    statusSpinner.classList.add('hidden');
+    statusIconError.classList.remove('hidden');
+    parserProgressContainer.classList.add('hidden');
+    statusCard.classList.add('border-rose-500/30', 'bg-rose-950/10');
+    statusMessage.textContent = t('parseFailed') + ` (${error.message})`;
+  }
 }
 
 // Filter Options Setup
@@ -605,6 +639,9 @@ function applyFilters() {
   
   if (activeTab === 'sessions') {
     renderSessions();
+  }
+  if (activeTab === 'security') {
+    renderSecurity();
   }
 }
 
@@ -799,6 +836,11 @@ function renderCharts() {
   renderPathsChart();
   renderIpsChart();
   renderUaCharts();
+  renderRefererChart();
+  renderContentTypeChart();
+  renderBandwidthChart();
+  renderProtocolChart();
+  renderHeatmap();
 
   // Show/Hide and render bot analysis if bots are present
   const hasBots = filteredEntries.some(entry => entry.userAgentParsed.isBot);
@@ -1218,6 +1260,421 @@ function renderBotCharts() {
 }
 
 // Helpers
+function renderRefererChart() {
+  // Group referers by host; empty referer counts as direct traffic
+  const refMap = {};
+  filteredEntries.forEach(entry => {
+    let key;
+    if (!entry.referer || entry.referer === '-') {
+      key = t('refererDirect');
+    } else {
+      try {
+        key = new URL(entry.referer).host;
+      } catch {
+        key = entry.referer;
+      }
+    }
+    refMap[key] = (refMap[key] || 0) + 1;
+  });
+
+  const sorted = Object.entries(refMap)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 7);
+
+  const ctx = document.getElementById('chart-referers').getContext('2d');
+  charts.referers = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: sorted.map(item => item[0]),
+      datasets: [{
+        data: sorted.map(item => item[1]),
+        backgroundColor: 'rgba(20, 184, 166, 0.65)',
+        borderColor: 'rgb(20, 184, 166)',
+        borderWidth: 1,
+        borderRadius: 4
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        x: { beginAtZero: true, ticks: { precision: 0 } },
+        y: {
+          ticks: {
+            callback: function(value) {
+              const label = this.getLabelForValue(value);
+              return label.length > 30 ? label.substring(0, 30) + '...' : label;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderContentTypeChart() {
+  const typeMap = {};
+  filteredEntries.forEach(entry => {
+    typeMap[entry.contentType] = (typeMap[entry.contentType] || 0) + 1;
+  });
+
+  const sorted = Object.entries(typeMap).sort((a, b) => b[1] - a[1]);
+  const palette = [
+    'rgba(139, 92, 246, 0.75)',  // Violet
+    'rgba(16, 185, 129, 0.75)',  // Emerald
+    'rgba(59, 130, 246, 0.75)',  // Blue
+    'rgba(245, 158, 11, 0.75)',  // Amber
+    'rgba(236, 72, 153, 0.75)',  // Pink
+    'rgba(20, 184, 166, 0.75)',  // Teal
+    'rgba(148, 163, 184, 0.75)'  // Slate
+  ];
+
+  const ctx = document.getElementById('chart-content-types').getContext('2d');
+  charts.contentTypes = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: sorted.map(item => t(item[0])),
+      datasets: [{
+        data: sorted.map(item => item[1]),
+        backgroundColor: sorted.map((_, i) => palette[i % palette.length]),
+        borderColor: 'rgba(15, 23, 42, 0.8)',
+        borderWidth: 1.5,
+        hoverOffset: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: { boxWidth: 12, padding: 12 }
+        }
+      }
+    }
+  });
+}
+
+function renderBandwidthChart() {
+  const byteMap = {};
+  filteredEntries.forEach(entry => {
+    if (entry.path && entry.path !== '-' && entry.size > 0) {
+      byteMap[entry.path] = (byteMap[entry.path] || 0) + entry.size;
+    }
+  });
+
+  const sorted = Object.entries(byteMap)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6);
+
+  const ctx = document.getElementById('chart-bandwidth').getContext('2d');
+  charts.bandwidth = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: sorted.map(item => item[0]),
+      datasets: [{
+        data: sorted.map(item => item[1]),
+        backgroundColor: 'rgba(59, 130, 246, 0.65)',
+        borderColor: 'rgb(59, 130, 246)',
+        borderWidth: 1,
+        borderRadius: 4
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (context) => formatBytes(context.parsed.x)
+          }
+        }
+      },
+      scales: {
+        x: {
+          beginAtZero: true,
+          ticks: { callback: (value) => formatBytes(value, 0) }
+        },
+        y: {
+          ticks: {
+            callback: function(value) {
+              const label = this.getLabelForValue(value);
+              return label.length > 20 ? label.substring(0, 20) + '...' : label;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderProtocolChart() {
+  const protoMap = {};
+  filteredEntries.forEach(entry => {
+    const key = (entry.protocol && entry.protocol !== '-') ? entry.protocol : t('protocolUnknown');
+    protoMap[key] = (protoMap[key] || 0) + 1;
+  });
+
+  const sorted = Object.entries(protoMap).sort((a, b) => b[1] - a[1]);
+  const palette = [
+    'rgba(99, 102, 241, 0.75)',  // Indigo
+    'rgba(16, 185, 129, 0.75)',  // Emerald
+    'rgba(245, 158, 11, 0.75)',  // Amber
+    'rgba(148, 163, 184, 0.75)'  // Slate
+  ];
+
+  const ctx = document.getElementById('chart-protocols').getContext('2d');
+  charts.protocols = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: sorted.map(item => item[0]),
+      datasets: [{
+        data: sorted.map(item => item[1]),
+        backgroundColor: sorted.map((_, i) => palette[i % palette.length]),
+        borderColor: 'rgba(15, 23, 42, 0.8)',
+        borderWidth: 1.5,
+        hoverOffset: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: { boxWidth: 12, padding: 12 }
+        }
+      }
+    }
+  });
+}
+
+// Weekday x hour traffic heatmap, rendered as a CSS grid (Chart.js has no native heatmap)
+function renderHeatmap() {
+  const grid = Array.from({ length: 7 }, () => new Array(24).fill(0));
+  filteredEntries.forEach(entry => {
+    if (entry.date) {
+      // getDay(): 0 = Sunday; shift so the grid starts on Monday
+      const day = (entry.date.getDay() + 6) % 7;
+      grid[day][entry.date.getHours()]++;
+    }
+  });
+
+  const max = Math.max(1, ...grid.map(row => Math.max(...row)));
+  const dayFormatter = new Intl.DateTimeFormat(getLanguage(), { weekday: 'short' });
+  // 2024-01-01 is a Monday
+  const dayNames = Array.from({ length: 7 }, (_, i) => dayFormatter.format(new Date(2024, 0, 1 + i)));
+
+  let html = '<div class="min-w-[720px] grid gap-[3px]" style="grid-template-columns: 3rem repeat(24, minmax(0, 1fr));">';
+  html += '<div></div>';
+  for (let h = 0; h < 24; h++) {
+    html += `<div class="text-[9px] text-slate-500 text-center">${h}</div>`;
+  }
+  for (let d = 0; d < 7; d++) {
+    html += `<div class="text-[10px] font-semibold text-slate-400 flex items-center">${dayNames[d]}</div>`;
+    for (let h = 0; h < 24; h++) {
+      const count = grid[d][h];
+      const alpha = count === 0 ? 0.04 : 0.15 + 0.85 * (count / max);
+      html += `<div class="h-5 rounded-sm" style="background: rgba(139, 92, 246, ${alpha.toFixed(2)})" title="${dayNames[d]} ${h}:00 — ${count.toLocaleString()}"></div>`;
+    }
+  }
+  html += '</div>';
+  trafficHeatmap.innerHTML = html;
+}
+
+// Security Tab: attack patterns, 404 hotspots, and failed-auth aggregation
+function renderSecurity() {
+  const total = filteredEntries.length;
+  const threatEntries = filteredEntries.filter(entry => entry.threat);
+  const authFailures = filteredEntries.filter(entry => entry.status === 401);
+  const notFoundEntries = filteredEntries.filter(entry => entry.status === 404);
+
+  // Destroy previous security charts (renderSecurity runs independently of renderCharts)
+  ['threats', 'err404'].forEach(key => {
+    if (charts[key]) {
+      charts[key].destroy();
+      charts[key] = null;
+    }
+  });
+
+  // Aggregate suspicious activity per IP
+  const threatIpMap = {};
+  threatEntries.forEach(entry => {
+    if (!threatIpMap[entry.ip]) {
+      threatIpMap[entry.ip] = { count: 0, categories: new Set(), lastSeen: null };
+    }
+    const item = threatIpMap[entry.ip];
+    item.count++;
+    item.categories.add(entry.threat);
+    if (entry.date && (!item.lastSeen || entry.date > item.lastSeen)) {
+      item.lastSeen = entry.date;
+    }
+  });
+
+  // Stat cards
+  const threatPercent = total > 0 ? Math.round((threatEntries.length / total) * 100) : 0;
+  secStatThreats.textContent = `${threatEntries.length.toLocaleString()} (${threatPercent}%)`;
+  secStatIps.textContent = Object.keys(threatIpMap).length.toLocaleString();
+  secStatAuth.textContent = authFailures.length.toLocaleString();
+
+  const hasFindings = threatEntries.length > 0 || authFailures.length > 0 || notFoundEntries.length > 0;
+  secEmptyState.classList.toggle('hidden', hasFindings);
+
+  // Threat category doughnut
+  const categoryMap = {};
+  threatEntries.forEach(entry => {
+    categoryMap[entry.threat] = (categoryMap[entry.threat] || 0) + 1;
+  });
+  const sortedCategories = Object.entries(categoryMap).sort((a, b) => b[1] - a[1]);
+  const threatPalette = [
+    'rgba(244, 63, 94, 0.75)',   // Rose
+    'rgba(245, 158, 11, 0.75)',  // Amber
+    'rgba(236, 72, 153, 0.75)',  // Pink
+    'rgba(249, 115, 22, 0.75)',  // Orange
+    'rgba(168, 85, 247, 0.75)',  // Purple
+    'rgba(59, 130, 246, 0.75)',  // Blue
+    'rgba(148, 163, 184, 0.75)'  // Slate
+  ];
+
+  if (sortedCategories.length > 0) {
+    const ctx = document.getElementById('chart-threats').getContext('2d');
+    charts.threats = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: sortedCategories.map(item => t(item[0])),
+        datasets: [{
+          data: sortedCategories.map(item => item[1]),
+          backgroundColor: sortedCategories.map((_, i) => threatPalette[i % threatPalette.length]),
+          borderColor: 'rgba(15, 23, 42, 0.8)',
+          borderWidth: 1.5,
+          hoverOffset: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { boxWidth: 12, padding: 10 }
+          }
+        }
+      }
+    });
+  }
+
+  // Suspicious IPs table (top 10 by count)
+  const topThreatIps = Object.entries(threatIpMap)
+    .sort((a, b) => b[1].count - a[1].count)
+    .slice(0, 10);
+
+  secIpsTable.innerHTML = topThreatIps.map(([ip, item]) => {
+    const categories = [...item.categories].map(cat =>
+      `<span class="inline-block px-1.5 py-0.5 mr-1 mb-0.5 rounded text-[10px] font-sans font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">${t(cat)}</span>`
+    ).join('');
+    return `
+      <tr>
+        <td class="py-2 pr-4">${escapeHtml(ip)}</td>
+        <td class="py-2 pr-4">${item.count.toLocaleString()}</td>
+        <td class="py-2 pr-4 font-sans">${categories}</td>
+        <td class="py-2 whitespace-nowrap">${item.lastSeen ? item.lastSeen.toLocaleString(getLanguage()) : '-'}</td>
+      </tr>
+    `;
+  }).join('') || `<tr><td colspan="4" class="py-4 text-center text-slate-500 font-sans">${t('secNoData')}</td></tr>`;
+
+  // Top 404 paths bar chart
+  const pathMap404 = {};
+  notFoundEntries.forEach(entry => {
+    if (entry.path && entry.path !== '-') {
+      pathMap404[entry.path] = (pathMap404[entry.path] || 0) + 1;
+    }
+  });
+  const sorted404 = Object.entries(pathMap404)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8);
+
+  if (sorted404.length > 0) {
+    const ctx404 = document.getElementById('chart-404').getContext('2d');
+    charts.err404 = new Chart(ctx404, {
+      type: 'bar',
+      data: {
+        labels: sorted404.map(item => item[0]),
+        datasets: [{
+          data: sorted404.map(item => item[1]),
+          backgroundColor: 'rgba(245, 158, 11, 0.65)',
+          borderColor: 'rgb(245, 158, 11)',
+          borderWidth: 1,
+          borderRadius: 4
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          x: { beginAtZero: true, ticks: { precision: 0 } },
+          y: {
+            ticks: {
+              callback: function(value) {
+                const label = this.getLabelForValue(value);
+                return label.length > 28 ? label.substring(0, 28) + '...' : label;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Failed logins per IP table (top 10)
+  const authIpMap = {};
+  authFailures.forEach(entry => {
+    if (!authIpMap[entry.ip]) {
+      authIpMap[entry.ip] = { count: 0, paths: new Set(), lastSeen: null };
+    }
+    const item = authIpMap[entry.ip];
+    item.count++;
+    item.paths.add(entry.path);
+    if (entry.date && (!item.lastSeen || entry.date > item.lastSeen)) {
+      item.lastSeen = entry.date;
+    }
+  });
+
+  const topAuthIps = Object.entries(authIpMap)
+    .sort((a, b) => b[1].count - a[1].count)
+    .slice(0, 10);
+
+  secAuthTable.innerHTML = topAuthIps.map(([ip, item]) => {
+    const paths = [...item.paths].slice(0, 3).map(p => escapeHtml(p)).join(', ') + (item.paths.size > 3 ? ', …' : '');
+    return `
+      <tr>
+        <td class="py-2 pr-4">${escapeHtml(ip)}</td>
+        <td class="py-2 pr-4">${item.count.toLocaleString()}</td>
+        <td class="py-2 pr-4 truncate max-w-[240px]" title="${escapeHtml([...item.paths].join(', '))}">${paths}</td>
+        <td class="py-2 whitespace-nowrap">${item.lastSeen ? item.lastSeen.toLocaleString(getLanguage()) : '-'}</td>
+      </tr>
+    `;
+  }).join('') || `<tr><td colspan="4" class="py-4 text-center text-slate-500 font-sans">${t('secNoData')}</td></tr>`;
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
 function formatBytes(bytes, decimals = 2) {
   if (bytes === 0) return '0 B';
   const k = 1024;
@@ -1392,22 +1849,27 @@ async function loadLogFromCache() {
 // Tab navigation handler
 function switchTab(tab) {
   activeTab = tab;
-  if (tab === 'dashboard') {
-    tabBtnDashboard.classList.add('border-brand-500', 'text-slate-100');
-    tabBtnDashboard.classList.remove('border-transparent', 'text-slate-400');
-    tabBtnSessions.classList.remove('border-brand-500', 'text-slate-100');
-    tabBtnSessions.classList.add('border-transparent', 'text-slate-400');
-    panelDashboard.classList.remove('hidden');
-    panelSessions.classList.add('hidden');
-  } else {
-    tabBtnSessions.classList.add('border-brand-500', 'text-slate-100');
-    tabBtnSessions.classList.remove('border-transparent', 'text-slate-400');
-    tabBtnDashboard.classList.remove('border-brand-500', 'text-slate-100');
-    tabBtnDashboard.classList.add('border-transparent', 'text-slate-400');
-    panelSessions.classList.remove('hidden');
-    panelDashboard.classList.add('hidden');
-    renderSessions();
-  }
+
+  const tabs = {
+    dashboard: { btn: tabBtnDashboard, panel: panelDashboard },
+    sessions: { btn: tabBtnSessions, panel: panelSessions },
+    security: { btn: tabBtnSecurity, panel: panelSecurity }
+  };
+
+  Object.entries(tabs).forEach(([name, { btn, panel }]) => {
+    if (name === tab) {
+      btn.classList.add('border-brand-500', 'text-slate-100');
+      btn.classList.remove('border-transparent', 'text-slate-400');
+      panel.classList.remove('hidden');
+    } else {
+      btn.classList.remove('border-brand-500', 'text-slate-100');
+      btn.classList.add('border-transparent', 'text-slate-400');
+      panel.classList.add('hidden');
+    }
+  });
+
+  if (tab === 'sessions') renderSessions();
+  if (tab === 'security') renderSecurity();
 }
 
 // Helper to format duration in readable format

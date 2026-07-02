@@ -2,6 +2,20 @@
 
 All notable changes to the **LogWerk** project will be documented in this file.
 
+## [1.2.0] - 2026-07-02
+### Added
+- **Security tab**: New third tab with attack-pattern detection (config/secret probes, CMS/PHP exploits, device/server exploits, admin panel scans, proxy/DNS abuse, path traversal, malformed requests), a most-active-suspicious-IPs table, top 404 error paths, and a failed-logins-per-IP (401) brute-force overview.
+- **Referrer analysis**: Top traffic sources chart grouping referrers by host, with direct/unknown traffic as its own bucket.
+- **Traffic heatmap**: Weekday × hour heatmap revealing load peaks and nightly bot waves.
+- **Content type breakdown**: Requests grouped into pages, images, JS/CSS/fonts, API, feeds/sitemaps, media, and other.
+- **Bandwidth analysis**: Top paths by transferred data volume plus an HTTP protocol version (1.0/1.1/2.0) distribution chart.
+- All new views are fully localized in all six languages and react to filters, search, and language switching like the existing charts.
+
+## [1.1.0] - 2026-07-02
+### Added
+- **Gzip-compressed log support**: Rotated, gzip-compressed logs (e.g. `access.log.2.gz`) can now be loaded directly. Files are detected by their gzip magic bytes (not the file name) and decompressed in the browser via the native `DecompressionStream` API — no library, no build step, fully offline.
+- **Rotated log files in the file picker**: The file dialog now also accepts `.gz` and numbered rotation suffixes (`.log.1` … `.log.9`); drag & drop continues to accept any file name.
+
 ## [1.0.1] - 2026-07-01
 ### Fixed
 - **Custom RegEx safety**: Custom log patterns are now validated to define all 9 required capture groups before use, replacing silent all-zero status/size data with a clear error message.

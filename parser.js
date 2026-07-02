@@ -127,8 +127,64 @@ export function parseLine(line, preset) {
     size: fields.size ? (match[fields.size] === '-' ? 0 : parseInt(match[fields.size], 10) || 0) : 0,
     referer: fields.referer ? match[fields.referer] || '-' : '-',
     userAgent: uaString,
-    userAgentParsed: uaParsed
+    userAgentParsed: uaParsed,
+    contentType: classifyContentType(path),
+    threat: classifyThreat(path, method)
   };
+}
+
+// Known exploit/scanner request patterns, keyed by i18n category key.
+// Ordered by specificity: the first matching category wins.
+const THREAT_PATTERNS = [
+  { category: 'threatSecrets', regex: /\.(env|git|svn|htpasswd|ssh|pem|key|bak|sql|sqlite|dump)([\/?]|$)|\/(credentials|secrets|id_rsa|backup\.(zip|tar|gz))/i },
+  { category: 'threatTraversal', regex: /\.\.\/|\.\.%2f|%2e%2e|\/etc\/(passwd|shadow)/i },
+  { category: 'threatCms', regex: /wp-login\.php|wp-admin|wp-config|xmlrpc\.php|wp-content\/(plugins|uploads).*\.php|eval-stdin\.php|phpunit|\/vendor\/.*\.php|think\\?app|\/index\.php\?s=/i },
+  { category: 'threatDevice', regex: /\/SDK\/webLanguage|\/HNAP1|\/boaform|\/GponForm|\/cgi-bin\/|\/geoserver|\/manager\/html|\/actuator\/|\/solr\/|\/druid\/|\/jenkins|\/owa\/|\/autodiscover|\/device\.rsp|\/shell\?/i },
+  { category: 'threatAdmin', regex: /phpmyadmin|\/pma\/|\/adminer|\/myadmin|\/dbadmin|\/login\.action|\/admin\/(login|config|setup)/i },
+  { category: 'threatProxy', regex: /\/dns-query|\/resolve\?name=/i }
+];
+
+/**
+ * Classifies a request as a known attack/scanner pattern.
+ * @returns {string|null} i18n category key, or null for benign requests.
+ */
+export function classifyThreat(path, method) {
+  if (method === 'Malformed Request') return 'threatMalformed';
+  if (method === 'CONNECT') return 'threatProxy';
+  if (!path || path === '-') return null;
+
+  for (const pattern of THREAT_PATTERNS) {
+    if (pattern.regex.test(path)) return pattern.category;
+  }
+  return null;
+}
+
+const CONTENT_TYPE_EXTENSIONS = {
+  ctImage: /\.(png|jpe?g|gif|webp|svg|ico|avif|bmp)$/i,
+  ctAsset: /\.(js|mjs|css|map|woff2?|ttf|otf|eot)$/i,
+  ctMedia: /\.(mp4|webm|mp3|ogg|wav|m4a|mov|pdf)$/i,
+  ctFeed: /\.(xml|rss|atom)$/i
+};
+
+/**
+ * Groups a request path into a coarse content category (i18n key).
+ */
+export function classifyContentType(path) {
+  if (!path || path === '-' || path.startsWith('[')) return 'ctOther';
+
+  // Strip query string before checking the extension
+  const cleanPath = path.split('?')[0];
+
+  if (cleanPath.includes('/api/') || /\.json$/i.test(cleanPath)) return 'ctApi';
+  if (/\/(feed|rss)\/?$/i.test(cleanPath)) return 'ctFeed';
+
+  for (const [category, regex] of Object.entries(CONTENT_TYPE_EXTENSIONS)) {
+    if (regex.test(cleanPath)) return category;
+  }
+
+  // No file extension (or .html): treat as a page view
+  if (/\.html?$/i.test(cleanPath) || !/\.[a-z0-9]{1,5}$/i.test(cleanPath)) return 'ctPage';
+  return 'ctOther';
 }
 
 /**

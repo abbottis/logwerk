@@ -1,6 +1,6 @@
 # LogWerk - Server Log Analytics
 
-[![Version](https://img.shields.io/badge/version-1.0.1-6d28d9?style=flat-square)](https://github.com/abbottis/logwerk/releases)
+[![Version](https://img.shields.io/badge/version-1.2.0-6d28d9?style=flat-square)](https://github.com/abbottis/logwerk/releases)
 [![License: MIT](https://img.shields.io/github/license/abbottis/logwerk?style=flat-square)](LICENSE)
 
 [Changelog](changelog.md)
@@ -17,8 +17,11 @@ It's built for developers, sysadmins, and site operators who want a quick, priva
 
 - **Zero backend, 100% client-side**: Pure HTML5, ES6 modules, and Tailwind CSS. Your log files never leave the browser.
 - **Multiple log format presets**: Nginx/Apache Combined (default), Apache Common, or bring your own Custom RegEx pattern.
+- **Compressed & rotated logs**: Load gzip-compressed rotation files (`access.log.2.gz`) directly — detected by magic bytes and decompressed in the browser via the native `DecompressionStream` API. Plain rotated files (`access.log.1`) work too.
 - **Async, chunked parsing**: Large log files are parsed in the background without freezing the UI.
 - **Interactive analytics dashboard**: Traffic over time, HTTP status distribution, top paths, top client IPs, browsers, and operating systems — all rendered with Chart.js.
+- **Traffic insights**: Top traffic sources (referrer), content type breakdown (pages, images, JS/CSS, API, feeds), top paths by data volume, HTTP protocol version distribution, and a weekday × hour traffic heatmap.
+- **Security tab**: Detects known attack patterns (config/secret probes, CMS/PHP exploits, device/server exploits, admin panel scans, path traversal, proxy/DNS abuse), lists the most active suspicious IPs, top 404 error paths, and failed logins (401) per IP.
 - **Bot traffic intelligence**: Detects and classifies 40+ known bots and crawlers (search engines, AI crawlers, SEO tools, social media previews, Fediverse/ActivityPub crawlers, security scanners) with provider and purpose breakdowns.
 - **Offline Geo-IP badges**: Visual country indicators per request, resolved entirely offline.
 - **User Session Reconstruction**: Groups requests by client fingerprint (IP + User-Agent) into chronological session timelines, with filters for minimum clicks, session type, and sorting.
@@ -55,7 +58,7 @@ Then open your browser and go to: **`http://localhost:8000`**
 
 ## How to Use
 
-1. **Load Log**: Drag and drop your server log file (e.g., `access.log`) into the top dropzone.
+1. **Load Log**: Drag and drop your server log file (e.g., `access.log`, `access.log.1`, or `access.log.2.gz`) into the top dropzone.
 2. **Format Preset**: The app supports **Nginx/Apache Combined** (default), **Apache Common**, and **Custom RegEx**.
 3. **Filter**: Search by IP, path, status, referer, or filter traffic by **Humans Only** / **Bots Only** (which opens a specific bot dropdown selector). Sort entries by log age, oldest or newest first.
 4. **Inspect**: Click on any row in the table to slide open detailed client and request metadata.
