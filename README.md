@@ -1,5 +1,7 @@
 # LogWerk - Server Log Analytics
 
+![Screenashot of LogWerk Interface](https://t01.li/content/images/size/w1000/2026/07/logwerk-gui.webp)
+
 [![Version](https://img.shields.io/badge/version-1.2.0-6d28d9?style=flat-square)](https://github.com/abbottis/logwerk/releases)
 [![License: MIT](https://img.shields.io/github/license/abbottis/logwerk?style=flat-square)](LICENSE)
 
