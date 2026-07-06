@@ -1,6 +1,4 @@
-# LogWerk - Server Log Analytics
-
-**Find AI crawlers in your server logs. Locally. In your browser. No backend.**
+# LogWerk - Find AI crawlers in your server logs. Locally. In your browser. No backend
 
 ![Screenashot of LogWerk Interface](https://t01.li/content/images/size/w1000/2026/07/logwerk-gui.webp)
 
