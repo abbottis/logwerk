@@ -253,9 +253,14 @@ function setupEventListeners() {
     }
   });
 
-  // "Load a sample log" — stop the click from also opening the file picker
+  // "Load a sample log" — DEMO-EXCLUSIVE: only expose the sample loader on the
+  // hosted GitHub Pages demo, never in the product itself (local, cloned, or
+  // released builds). The button ships hidden and is revealed here only on github.io.
   const loadSampleBtn = document.getElementById('load-sample-btn');
   if (loadSampleBtn) {
+    if (location.hostname.endsWith('github.io')) {
+      loadSampleBtn.classList.remove('hidden');
+    }
     loadSampleBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       loadSampleLog();
