@@ -253,6 +253,15 @@ function setupEventListeners() {
     }
   });
 
+  // "Load a sample log" — stop the click from also opening the file picker
+  const loadSampleBtn = document.getElementById('load-sample-btn');
+  if (loadSampleBtn) {
+    loadSampleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      loadSampleLog();
+    });
+  }
+
   // Preset configuration change
   const presetRadios = document.querySelectorAll('input[name="preset"]');
   presetRadios.forEach(radio => {
@@ -473,6 +482,30 @@ async function readLogFile(file) {
     return new Response(decompressed).text();
   }
   return file.text();
+}
+
+// Fetch the bundled, fully anonymized demo log and run it through the normal pipeline.
+async function loadSampleLog() {
+  try {
+    // The sample is Nginx/Apache Combined — force that preset regardless of prior selection.
+    const combined = document.querySelector('input[name="preset"][value="nginx_combined"]');
+    if (combined) combined.checked = true;
+
+    const res = await fetch('sample-access.log');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const text = await res.text();
+    const file = new File([text], 'sample-access.log', { type: 'text/plain' });
+    handleLogFile(file);
+  } catch (error) {
+    console.error(error);
+    statusContainer.classList.remove('hidden');
+    statusCard.className = 'glass-panel p-4 rounded-xl flex items-center justify-between border-rose-500/30 bg-rose-950/10';
+    statusSpinner.classList.add('hidden');
+    statusIconSuccess.classList.add('hidden');
+    statusIconError.classList.remove('hidden');
+    parserProgressContainer.classList.add('hidden');
+    statusMessage.textContent = t('sampleLoadFailed') + ` (${error.message})`;
+  }
 }
 
 async function handleLogFile(file) {

@@ -1,3 +1,6 @@
 .DS_Store
 *.log
 *.log.*
+
+# Exception: the bundled, fully anonymized demo log (safe to publish)
+!sample-access.log
