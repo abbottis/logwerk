@@ -4,7 +4,7 @@
 
 ![Screenashot of LogWerk Interface](https://t01.li/content/images/size/w1000/2026/07/logwerk-gui.webp)
 
-[![Version](https://img.shields.io/badge/version-1.2.0-6d28d9?style=flat-square)](https://github.com/abbottis/logwerk/releases)
+[![Version](https://img.shields.io/badge/version-1.2.1-6d28d9?style=flat-square)](https://github.com/abbottis/logwerk/releases)
 [![License: MIT](https://img.shields.io/github/license/abbottis/logwerk?style=flat-square)](LICENSE)
 
 [Changelog](changelog.md)
@@ -17,6 +17,19 @@ LogWerk is a lightweight, offline-first server log analyzer dashboard that runs 
 
 It's built for developers, sysadmins, and site operators who want a quick, private way to understand their traffic: who's visiting, which bots are crawling, what's failing, and how real users are moving through the site — without setting up a full log-analytics stack.
 
+## Why LogWerk?
+
+Most log analyzers make you choose between two extremes: heavyweight, self-hosted stacks (ELK/Elastic, Grafana Loki, GoAccess) that need installation, configuration, and ongoing maintenance — or cloud services (Datadog, Loggly, Sematext) that require you to upload your raw access logs, IPs, and user agents to a third party. LogWerk sits in neither camp.
+
+- **Truly private, truly offline** — Your log file is read and parsed directly in the browser. Nothing is uploaded, no server processes it, no account is required. This makes it safe to analyze logs containing visitor IPs and other sensitive data, even on machines that aren't allowed to send data off-site.
+- **Zero setup, zero maintenance** — No install, no build step, no database, no Docker, no config files. Serve the folder statically (or open it in Safari) and drop in a log. Compared to standing up an ELK pipeline or a GoAccess install, you're looking at analysis in seconds, not an afternoon.
+- **Built for the AI-crawler era** — LogWerk recognizes 70+ crawlers and classifies each by **provider** (OpenAI, Anthropic, Perplexity, Google, ByteDance, …) and **purpose** (AI training, AI search, search indexing, SEO, social preview, security scanner). Generic tools typically lump everything into a single "bot" bucket or only recognize the big search engines — LogWerk tells you specifically that *OAI-SearchBot fetched your pages for ChatGPT search* versus *GPTBot scraped them for training*.
+- **Bot filtering that actually helps** — Toggle **Humans Only** to see genuine user traffic without crawler noise, or **Bots Only** to open a dropdown and drill into a *single* named bot. Answer questions like "Is Bytespider hammering my site?", "Which AI bots cite my content?", or "How much of my traffic is real people?" — questions most dashboards can't isolate at all.
+- **More than counts** — Beyond hit charts, LogWerk reconstructs individual user sessions into chronological timelines, flags attack patterns and brute-force attempts in a dedicated Security tab, and resolves visitor countries fully offline. It's an investigation tool, not just a traffic counter.
+- **Free & open** — MIT-licensed, no telemetry, no paywalled tiers, no seat limits.
+
+Reach for a full log-analytics stack when you need long-term retention, real-time alerting across many servers, or centralized multi-source aggregation. Reach for LogWerk when you want to understand *one* log file — right now, privately, without setting anything up.
+
 ## Features
 
 - **Zero backend, 100% client-side**: Pure HTML5, ES6 modules, and Tailwind CSS. Your log files never leave the browser.
@@ -26,7 +39,7 @@ It's built for developers, sysadmins, and site operators who want a quick, priva
 - **Interactive analytics dashboard**: Traffic over time, HTTP status distribution, top paths, top client IPs, browsers, and operating systems — all rendered with Chart.js.
 - **Traffic insights**: Top traffic sources (referrer), content type breakdown (pages, images, JS/CSS, API, feeds), top paths by data volume, HTTP protocol version distribution, and a weekday × hour traffic heatmap.
 - **Security tab**: Detects known attack patterns (config/secret probes, CMS/PHP exploits, device/server exploits, admin panel scans, path traversal, proxy/DNS abuse), lists the most active suspicious IPs, top 404 error paths, and failed logins (401) per IP.
-- **Bot traffic intelligence**: Detects and classifies 40+ known bots and crawlers (search engines, AI crawlers, SEO tools, social media previews, Fediverse/ActivityPub crawlers, security scanners) with provider and purpose breakdowns.
+- **Bot traffic intelligence**: Detects and classifies 70+ known bots and crawlers (search engines, AI crawlers, SEO tools, social media previews, Fediverse/ActivityPub crawlers, security scanners) with provider and purpose breakdowns.
 - **Offline Geo-IP badges**: Visual country indicators per request, resolved entirely offline.
 - **User Session Reconstruction**: Groups requests by client fingerprint (IP + User-Agent) into chronological session timelines, with filters for minimum clicks, session type, and sorting.
 - **Powerful filtering & search**: Search by IP, path, status, referer, or user agent; filter by traffic type, specific bot, status code, HTTP method, and sort entries by log age (oldest/newest first).
@@ -43,13 +56,13 @@ Modern browsers restrict loading local JavaScript modules via the `file://` prot
 
 Open your terminal in the project directory and run one of these commands:
 
-* **Python**: `python3 -m http.server 8000`
-* **Node.js**: `npx serve` or `npx http-server`
-* **PHP**: `php -S localhost:8000`
+- **Python**: `python3 -m http.server 8000`
+- **Node.js**: `npx serve` or `npx http-server`
+- **PHP**: `php -S localhost:8000`
 
 Then open your browser and go to: **`http://localhost:8000`**
 
-*To stop the server, press **`Ctrl + C`** in your terminal.*
+_To stop the server, press **`Ctrl + C`** in your terminal._
 
 ### Method B: Run directly via Safari (No Server)
 
@@ -72,9 +85,9 @@ Then open your browser and go to: **`http://localhost:8000`**
 
 This project runs entirely on the client side and fetches the following resources via CDNs:
 
-* **Tailwind CSS (v3)**: Utility-first CSS framework for layout styling. (CDN: `https://cdn.tailwindcss.com` | License: [MIT](https://github.com/tailwindlabs/tailwindcss/blob/master/LICENSE))
-* **Chart.js (v4)**: Canvas-based HTML5 rendering of analytics charts. (CDN: `https://cdn.jsdelivr.net/npm/chart.js` | License: [MIT](https://github.com/chartjs/Chart.js/blob/master/LICENSE.md))
-* **Google Fonts (Inter / Outfit)**: Typography styling. (CDN: `https://fonts.googleapis.com` | License: [OFL - SIL Open Font License](https://scripts.sil.org/OFL))
+- **Tailwind CSS (v3)**: Utility-first CSS framework for layout styling. (CDN: `https://cdn.tailwindcss.com` | License: [MIT](https://github.com/tailwindlabs/tailwindcss/blob/master/LICENSE))
+- **Chart.js (v4)**: Canvas-based HTML5 rendering of analytics charts. (CDN: `https://cdn.jsdelivr.net/npm/chart.js` | License: [MIT](https://github.com/chartjs/Chart.js/blob/master/LICENSE.md))
+- **Google Fonts (Inter / Outfit)**: Typography styling. (CDN: `https://fonts.googleapis.com` | License: [OFL - SIL Open Font License](https://scripts.sil.org/OFL))
 
 ## License
 

@@ -2,6 +2,13 @@
 
 All notable changes to the **LogWerk** project will be documented in this file.
 
+## [1.2.1] - 2026-07-07
+### Added
+- **Expanded bot detection**: Several officially verified crawlers that previously fell through to the generic "Other Crawler/Spider" bucket are now recognized individually with their correct provider and type:
+  - AI crawlers — OpenAI **OAI-SearchBot** (ChatGPT search/citations), Anthropic **Claude-SearchBot** and **Claude-User**, **Perplexity-User**, **Meta-ExternalFetcher**, **Bytespider** (ByteDance), **CCBot** (Common Crawl), **cohere-ai**, **Diffbot**, **ImagesiftBot** (Hive AI), **Timpibot**, and **YouBot** (You.com).
+  - Search indexers — **DuckDuckBot** (DuckDuckGo) and **PetalBot** (Petal / Huawei).
+  - SEO/marketing — **DataForSeoBot**.
+
 ## [1.2.0] - 2026-07-02
 ### Added
 - **Security tab**: New third tab with attack-pattern detection (config/secret probes, CMS/PHP exploits, device/server exploits, admin panel scans, proxy/DNS abuse, path traversal, malformed requests), a most-active-suspicious-IPs table, top 404 error paths, and a failed-logins-per-IP (401) brute-force overview.

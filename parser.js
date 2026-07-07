@@ -273,6 +273,8 @@ export function parseUserAgent(uaString) {
     { name: 'YandexBot', pattern: /yandexbot/i, provider: 'Yandex', type: 'Search Indexer' },
     { name: 'Yandex Crawler', pattern: /yandex/i, provider: 'Yandex', type: 'Search Indexer' },
     { name: 'Baiduspider', pattern: /baiduspider/i, provider: 'Baidu', type: 'Search Indexer' },
+    { name: 'DuckDuckBot', pattern: /duckduckbot/i, provider: 'DuckDuckGo', type: 'Search Indexer' },
+    { name: 'PetalBot', pattern: /petalbot/i, provider: 'Petal / Huawei', type: 'Search Indexer' },
     { name: 'SeznamBot', pattern: /seznambot/i, provider: 'Seznam', type: 'Search Indexer' },
     { name: 'Yahoo Slurp', pattern: /slurp/i, provider: 'Yahoo', type: 'Search Indexer' },
     { name: 'Internet Archive Bot', pattern: /archive\.org_bot/i, provider: 'Internet Archive', type: 'Archiver' },
@@ -280,11 +282,23 @@ export function parseUserAgent(uaString) {
 
     // AI crawlers
     { name: 'PerplexityBot', pattern: /perplexitybot/i, provider: 'Perplexity AI', type: 'AI Crawler' },
+    { name: 'Perplexity-User', pattern: /perplexity-user/i, provider: 'Perplexity AI', type: 'AI Crawler' },
     { name: 'GPTBot', pattern: /gptbot/i, provider: 'OpenAI', type: 'AI Crawler' },
+    { name: 'OAI-SearchBot', pattern: /oai-searchbot/i, provider: 'OpenAI', type: 'AI Crawler' },
     { name: 'ChatGPT-User', pattern: /chatgpt-user/i, provider: 'OpenAI', type: 'AI Crawler' },
+    { name: 'Claude-SearchBot', pattern: /claude-searchbot/i, provider: 'Anthropic', type: 'AI Crawler' },
+    { name: 'Claude-User', pattern: /claude-user/i, provider: 'Anthropic', type: 'AI Crawler' },
     { name: 'ClaudeBot', pattern: /claudebot/i, provider: 'Anthropic', type: 'AI Crawler' },
     { name: 'Amazonbot', pattern: /amazonbot/i, provider: 'Amazon', type: 'AI Crawler' },
     { name: 'Meta External Agent', pattern: /meta-externalagent/i, provider: 'Meta', type: 'AI Crawler' },
+    { name: 'Meta External Fetcher', pattern: /meta-externalfetcher/i, provider: 'Meta', type: 'AI Crawler' },
+    { name: 'Bytespider', pattern: /bytespider/i, provider: 'ByteDance', type: 'AI Crawler' },
+    { name: 'CCBot', pattern: /ccbot/i, provider: 'Common Crawl', type: 'AI Crawler' },
+    { name: 'cohere-ai', pattern: /cohere-ai/i, provider: 'Cohere', type: 'AI Crawler' },
+    { name: 'Diffbot', pattern: /diffbot/i, provider: 'Diffbot', type: 'AI Crawler' },
+    { name: 'ImagesiftBot', pattern: /imagesiftbot/i, provider: 'Hive AI', type: 'AI Crawler' },
+    { name: 'Timpibot', pattern: /timpibot/i, provider: 'Timpi', type: 'AI Crawler' },
+    { name: 'YouBot', pattern: /youbot/i, provider: 'You.com', type: 'AI Crawler' },
     { name: 'Applebot', pattern: /applebot/i, provider: 'Apple', type: 'Search Indexer' },
 
     // SEO / marketing tools
@@ -292,6 +306,7 @@ export function parseUserAgent(uaString) {
     { name: 'AhrefsBot', pattern: /ahrefsbot/i, provider: 'Ahrefs', type: 'SEO/Marketing' },
     { name: 'SemrushBot', pattern: /semrushbot/i, provider: 'Semrush', type: 'SEO/Marketing' },
     { name: 'MJ12bot', pattern: /mj12bot/i, provider: 'Majestic', type: 'SEO/Marketing' },
+    { name: 'DataForSeoBot', pattern: /dataforseobot/i, provider: 'DataForSEO', type: 'SEO/Marketing' },
     { name: 'Screaming Frog SEO Spider', pattern: /screaming frog seo spider/i, provider: 'Screaming Frog', type: 'SEO/Marketing' },
 
     // Social media preview/crawlers
