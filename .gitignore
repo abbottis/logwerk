@@ -4,3 +4,6 @@
 
 # Exception: the bundled, fully anonymized demo log (safe to publish)
 !sample-access.log
+
+# Locally-generated brainstorming/spec artifacts — not part of the project
+docs/superpowers/
