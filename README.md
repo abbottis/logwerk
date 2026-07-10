@@ -5,7 +5,7 @@
 ![Screenashot of LogWerk Interface](https://t01.li/content/images/size/w1000/2026/07/logwerk-gui.webp)
 
 [![Live Demo](https://img.shields.io/badge/demo-live-10b981?style=flat-square)](https://abbottis.github.io/logwerk/)
-[![Version](https://img.shields.io/badge/version-1.2.1-6d28d9?style=flat-square)](https://github.com/abbottis/logwerk/releases)
+[![Version](https://img.shields.io/badge/version-1.3.0-6d28d9?style=flat-square)](https://github.com/abbottis/logwerk/releases)
 [![License: MIT](https://img.shields.io/github/license/abbottis/logwerk?style=flat-square)](LICENSE)
 
 **[▶ Try the live demo](https://abbottis.github.io/logwerk/)** — click *"Load a sample log"* to explore a fully anonymized example dataset right in your browser. · [Changelog](changelog.md)
