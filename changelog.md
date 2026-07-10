@@ -2,6 +2,10 @@
 
 All notable changes to the **LogWerk** project will be documented in this file.
 
+## [1.3.0] - 2026-07-10
+### Added
+- **Light mode**: A new light theme derived from the existing dark scheme, toggled via a sun/moon button in the header. On first visit the app follows the operating system's `prefers-color-scheme`; the manual choice is remembered in `localStorage` and applied before first paint (no flash of the wrong theme). The dark theme is unchanged and remains the default. Implemented with semantic CSS variables so the glassmorphic panels, the remapped Tailwind slate palette, and the Chart.js tick/gridline colors all switch from a single source; charts repaint on toggle. Doughnut slice separators are now unified across all charts and theme-aware — a subtle dark gap on dark panels, a thin near-invisible white gap on light ones. The toggle tooltip is localized in all six languages.
+
 ## [1.2.1] - 2026-07-07
 ### Added
 - **Expanded bot detection**: Several officially verified crawlers that previously fell through to the generic "Other Crawler/Spider" bucket are now recognized individually with their correct provider and type:

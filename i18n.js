@@ -7,6 +7,7 @@ const TRANSLATIONS = {
   en: {
     title: 'LogWerk',
     subtitle: 'Server Log Analytics Dashboard',
+    themeToggle: 'Toggle light / dark theme',
     dropzoneTitle: 'Drag & drop log files here',
     dropzoneBrowse: 'or click to browse your computer',
     dropzoneSupported: 'Supports Nginx Combined, Apache Common, and custom regex configurations — plain, rotated (.log.1), or gzip-compressed (.gz) files.',
@@ -156,6 +157,7 @@ const TRANSLATIONS = {
   de: {
     title: 'LogWerk',
     subtitle: 'Server-Loganalyse Dashboard',
+    themeToggle: 'Hell-/Dunkelmodus umschalten',
     dropzoneTitle: 'Logdateien hierher ziehen',
     dropzoneBrowse: 'oder hier klicken, um Computer zu durchsuchen',
     dropzoneSupported: 'Unterstützt Nginx Combined, Apache Common und benutzerdefinierte RegEx-Formate — unkomprimiert, rotiert (.log.1) oder gzip-komprimiert (.gz).',
@@ -305,6 +307,7 @@ const TRANSLATIONS = {
   fr: {
     title: 'LogWerk',
     subtitle: "Tableau de bord d'analyse des journaux serveur",
+    themeToggle: 'Basculer le thème clair / sombre',
     dropzoneTitle: 'Glissez-déposez vos fichiers journaux ici',
     dropzoneBrowse: 'ou cliquez pour parcourir votre ordinateur',
     dropzoneSupported: 'Prend en charge Nginx Combined, Apache Common et les expressions régulières personnalisées — fichiers bruts, rotés (.log.1) ou compressés en gzip (.gz).',
@@ -454,6 +457,7 @@ const TRANSLATIONS = {
   es: {
     title: 'LogWerk',
     subtitle: 'Panel de análisis de registros del servidor',
+    themeToggle: 'Cambiar tema claro / oscuro',
     dropzoneTitle: 'Arrastra y suelta tus archivos de registro aquí',
     dropzoneBrowse: 'o haz clic para buscar en tu computadora',
     dropzoneSupported: 'Compatible con Nginx Combined, Apache Common y expresiones regulares personalizadas — archivos sin comprimir, rotados (.log.1) o comprimidos en gzip (.gz).',
@@ -603,6 +607,7 @@ const TRANSLATIONS = {
   it: {
     title: 'LogWerk',
     subtitle: 'Dashboard di analisi dei log del server',
+    themeToggle: 'Alterna tema chiaro / scuro',
     dropzoneTitle: 'Trascina qui i file di log',
     dropzoneBrowse: 'oppure clicca per sfogliare il computer',
     dropzoneSupported: 'Supporta Nginx Combined, Apache Common ed espressioni regolari personalizzate — file semplici, ruotati (.log.1) o compressi in gzip (.gz).',
@@ -752,6 +757,7 @@ const TRANSLATIONS = {
   uk: {
     title: 'LogWerk',
     subtitle: 'Аналітична панель логів сервера',
+    themeToggle: 'Перемкнути світлу / темну тему',
     dropzoneTitle: 'Перетягніть файли логів сюди',
     dropzoneBrowse: 'або виберіть файл на комп’ютері',
     dropzoneSupported: 'Підтримує формати Nginx Combined, Apache Common та власні регулярні вирази — звичайні, ротовані (.log.1) або стиснуті gzip (.gz) файли.',
@@ -971,6 +977,13 @@ export function translatePage() {
     } else {
       element.textContent = t(key);
     }
+  });
+
+  // Translate title/aria-label for icon-only controls (e.g. theme toggle)
+  document.querySelectorAll('[data-i18n-title]').forEach(element => {
+    const label = t(element.getAttribute('data-i18n-title'));
+    element.setAttribute('title', label);
+    element.setAttribute('aria-label', label);
   });
 
   // Handle document title

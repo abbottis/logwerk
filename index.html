@@ -4,6 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LogWerk - Server Log Analytics Dashboard</title>
+  <!-- Theme init: apply the saved/OS theme before first paint to avoid FOUC.
+       Stored choice wins; otherwise fall back to the OS preference. Dark is
+       the default when neither is available. -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem('logwerk-theme');
+        var useLight = stored
+          ? stored === 'light'
+          : window.matchMedia('(prefers-color-scheme: light)').matches;
+        if (useLight) document.documentElement.classList.add('light');
+      } catch (e) { /* localStorage/matchMedia unavailable — keep dark */ }
+    })();
+  </script>
   <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -29,6 +43,22 @@
               600: '#7c3aed',
               700: '#6d28d9',
               900: '#4c1d95',
+            },
+            // Slate is remapped onto CSS variables so every existing
+            // bg-/text-/border-slate-* class (and its /opacity modifiers)
+            // theme-switches automatically. Values live in the <style> block
+            // below: dark defaults on :root, light overrides on html.light.
+            slate: {
+              100: 'rgb(var(--c-slate-100) / <alpha-value>)',
+              200: 'rgb(var(--c-slate-200) / <alpha-value>)',
+              300: 'rgb(var(--c-slate-300) / <alpha-value>)',
+              400: 'rgb(var(--c-slate-400) / <alpha-value>)',
+              500: 'rgb(var(--c-slate-500) / <alpha-value>)',
+              600: 'rgb(var(--c-slate-600) / <alpha-value>)',
+              700: 'rgb(var(--c-slate-700) / <alpha-value>)',
+              800: 'rgb(var(--c-slate-800) / <alpha-value>)',
+              900: 'rgb(var(--c-slate-900) / <alpha-value>)',
+              950: 'rgb(var(--c-slate-950) / <alpha-value>)',
             }
           },
           boxShadow: {
@@ -41,27 +71,101 @@
   </script>
   
   <style>
+    /* ---- Theme tokens -------------------------------------------------
+       Dark is the default (matches the original design 1:1). Light overrides
+       live under html.light. The --c-slate-* channels feed the remapped
+       Tailwind slate palette (see tailwind.config above); the --glass-* and
+       --chart-* tokens drive the custom CSS and Chart.js below. */
+    :root {
+      /* Slate ramp (space-separated RGB channels for rgb(... / <alpha>)) */
+      --c-slate-100: 241 245 249;
+      --c-slate-200: 226 232 240;
+      --c-slate-300: 203 213 225;
+      --c-slate-400: 148 163 184;
+      --c-slate-500: 100 116 139;
+      --c-slate-600: 71 85 105;
+      --c-slate-700: 51 65 85;
+      --c-slate-800: 30 41 59;
+      --c-slate-900: 15 23 42;
+      --c-slate-950: 2 6 23;
+
+      /* Glassmorphism surfaces */
+      --glass-panel-bg: rgba(15, 23, 42, 0.65);
+      --glass-panel-border: rgba(255, 255, 255, 0.08);
+      --glass-panel-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+      --glass-card-bg: rgba(30, 41, 59, 0.45);
+      --glass-card-border: rgba(255, 255, 255, 0.05);
+      --glass-input-bg: rgba(15, 23, 42, 0.5);
+      --glass-input-border: rgba(255, 255, 255, 0.1);
+
+      /* Scrollbar */
+      --scrollbar-track: rgba(15, 23, 42, 0.3);
+
+      /* Chart.js defaults (ticks + gridlines) */
+      --chart-tick: rgba(255, 255, 255, 0.6);
+      --chart-grid: rgba(255, 255, 255, 0.08);
+      /* Doughnut slice separators */
+      --chart-slice-border: rgba(15, 23, 42, 0.8);
+      --chart-slice-border-width: 1.5;
+    }
+
+    html.light {
+      /* Light = hand-tuned inversion of the slate lightness ramp:
+         high numbers become bright surfaces, low numbers become dark text. */
+      --c-slate-100: 15 23 42;
+      --c-slate-200: 30 41 59;
+      --c-slate-300: 51 65 85;
+      --c-slate-400: 71 85 105;
+      --c-slate-500: 100 116 139;
+      --c-slate-600: 148 163 184;
+      --c-slate-700: 203 213 225;
+      --c-slate-800: 226 232 240;
+      --c-slate-900: 255 255 255;
+      --c-slate-950: 244 246 249;
+
+      --glass-panel-bg: rgba(255, 255, 255, 0.72);
+      --glass-panel-border: rgba(15, 23, 42, 0.08);
+      --glass-panel-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.10);
+      --glass-card-bg: rgba(255, 255, 255, 0.55);
+      --glass-card-border: rgba(15, 23, 42, 0.06);
+      --glass-input-bg: rgba(255, 255, 255, 0.7);
+      --glass-input-border: rgba(15, 23, 42, 0.12);
+
+      --scrollbar-track: rgba(148, 163, 184, 0.2);
+
+      --chart-tick: rgba(30, 41, 59, 0.7);
+      --chart-grid: rgba(15, 23, 42, 0.08);
+      /* Thin, near-invisible white gaps between slices on light panels */
+      --chart-slice-border: #ffffff;
+      --chart-slice-border-width: 1;
+    }
+
+    /* Theme toggle: show the sun in dark mode, the moon in light mode */
+    .theme-icon-moon { display: none; }
+    html.light .theme-icon-sun { display: none; }
+    html.light .theme-icon-moon { display: block; }
+
     /* Glassmorphism custom classes */
     .glass-panel {
-      background: rgba(15, 23, 42, 0.65);
+      background: var(--glass-panel-bg);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--glass-panel-border);
+      box-shadow: var(--glass-panel-shadow);
     }
-    
+
     .glass-card {
-      background: rgba(30, 41, 59, 0.45);
+      background: var(--glass-card-bg);
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
-      border: 1px solid rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--glass-card-border);
     }
-    
+
     .glass-input {
-      background: rgba(15, 23, 42, 0.5);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: var(--glass-input-bg);
+      border: 1px solid var(--glass-input-border);
     }
-    
+
     .glass-input:focus {
       border-color: rgba(139, 92, 246, 0.5);
       box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
@@ -74,7 +178,7 @@
       height: 8px;
     }
     ::-webkit-scrollbar-track {
-      background: rgba(15, 23, 42, 0.3);
+      background: var(--scrollbar-track);
     }
     ::-webkit-scrollbar-thumb {
       background: rgba(139, 92, 246, 0.3);
@@ -125,8 +229,19 @@
       </div>
     </div>
     
-    <!-- Controls (Language Switcher) -->
+    <!-- Controls (Theme Toggle + Language Switcher) -->
     <div class="flex items-center gap-4">
+      <button id="theme-toggle" type="button" data-i18n-title="themeToggle"
+              class="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-800 bg-slate-900/80 text-slate-400 hover:text-brand-400 hover:border-brand-500/40 transition-all duration-200">
+        <!-- Sun: shown in dark mode (click to go light) -->
+        <svg class="theme-icon-sun w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+        </svg>
+        <!-- Moon: shown in light mode (click to go dark) -->
+        <svg class="theme-icon-moon w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+        </svg>
+      </button>
       <div class="bg-slate-900/80 p-0.5 rounded-lg border border-slate-800 flex gap-0.5">
         <button id="btn-lang-en" class="px-2.5 py-1 text-xs font-semibold rounded-md transition-all duration-200 bg-brand-600 text-white">EN</button>
         <button id="btn-lang-de" class="px-2.5 py-1 text-xs font-semibold rounded-md transition-all duration-200 text-slate-400 hover:text-slate-200">DE</button>
@@ -249,7 +364,7 @@
         <!-- Stat Card: Total Requests -->
         <div class="glass-panel p-4 rounded-xl shadow-glass-inset hover:border-slate-700/50 transition-all duration-300">
           <p class="text-xs font-semibold text-slate-400" data-i18n="statTotal">Total Requests</p>
-          <p id="stat-total" class="text-2xl font-black mt-2 text-white">0</p>
+          <p id="stat-total" class="text-2xl font-black mt-2 text-slate-100">0</p>
         </div>
         
         <!-- Stat Card: Success Rate -->

@@ -111,15 +111,31 @@ const detailBotType = document.getElementById('detail-bot-type');
 const detailReferer = document.getElementById('detail-referer');
 const detailUa = document.getElementById('detail-ua');
 
-// Initialize Chart.js global styling
-Chart.defaults.color = 'rgba(255, 255, 255, 0.6)';
-Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.08)';
+// Initialize Chart.js global styling. Tick + gridline colors are theme-driven:
+// they read the --chart-* CSS variables so they flip with the light/dark theme.
+function applyChartTheme() {
+  const styles = getComputedStyle(document.documentElement);
+  Chart.defaults.color = styles.getPropertyValue('--chart-tick').trim() || 'rgba(255, 255, 255, 0.6)';
+  Chart.defaults.borderColor = styles.getPropertyValue('--chart-grid').trim() || 'rgba(255, 255, 255, 0.08)';
+}
+applyChartTheme();
 Chart.defaults.font.family = "'Inter', sans-serif";
+
+// Theme-aware separator for doughnut slices: a subtle dark gap on dark panels,
+// a thin white gap on light ones. Read fresh so it follows the active theme.
+function doughnutSliceBorder() {
+  const s = getComputedStyle(document.documentElement);
+  return {
+    color: s.getPropertyValue('--chart-slice-border').trim() || 'rgba(15, 23, 42, 0.8)',
+    width: parseFloat(s.getPropertyValue('--chart-slice-border-width')) || 1.5
+  };
+}
 
 // Initialize App
 window.addEventListener('DOMContentLoaded', async () => {
   initI18n();
   setupLanguageSwitcher();
+  setupThemeToggle();
   setupEventListeners();
 
   // Clean custom regex block styling
@@ -169,6 +185,26 @@ window.addEventListener('languagechanged', () => {
     }
   }
 });
+
+// Theme Toggle Setup — flips the light/dark theme, persists the choice, and
+// recolors the charts (whose tick/grid colors are theme-driven).
+function setupThemeToggle() {
+  const toggle = document.getElementById('theme-toggle');
+  if (!toggle) return;
+  toggle.addEventListener('click', () => {
+    const isLight = document.documentElement.classList.toggle('light');
+    try {
+      localStorage.setItem('logwerk-theme', isLight ? 'light' : 'dark');
+    } catch (e) { /* storage unavailable — session-only toggle */ }
+
+    // Charts don't inherit CSS; re-read the theme tokens and repaint them.
+    applyChartTheme();
+    if (logEntries.length > 0) {
+      renderCharts();
+      if (activeTab === 'security') renderSecurity();
+    }
+  });
+}
 
 // Language Switcher Setup
 function setupLanguageSwitcher() {
@@ -975,16 +1011,8 @@ function renderStatusChart() {
     'Other': 'rgba(148, 163, 184, 0.75)' // Slate
   };
   
-  const borderColors = {
-    '2xx': 'rgb(16, 185, 129)',
-    '3xx': 'rgb(59, 130, 246)',
-    '4xx': 'rgb(245, 158, 11)',
-    '5xx': 'rgb(244, 63, 94)',
-    'Other': 'rgb(148, 163, 184)'
-  };
-
   const bgColors = labels.map(label => colors[label]);
-  const borderColorsArr = labels.map(label => borderColors[label]);
+  const sliceBorder = doughnutSliceBorder();
 
   const ctx = document.getElementById('chart-status').getContext('2d');
   charts.status = new Chart(ctx, {
@@ -994,8 +1022,8 @@ function renderStatusChart() {
       datasets: [{
         data: data,
         backgroundColor: bgColors,
-        borderColor: borderColorsArr,
-        borderWidth: 1.5,
+        borderColor: sliceBorder.color,
+        borderWidth: sliceBorder.width,
         hoverOffset: 6
       }]
     },
@@ -1005,7 +1033,7 @@ function renderStatusChart() {
       plugins: {
         legend: {
           position: 'right',
-          labels: { boxWidth: 12, padding: 15 }
+          labels: { boxWidth: 12, padding: 12 }
         }
       }
     }
@@ -1371,6 +1399,7 @@ function renderContentTypeChart() {
     'rgba(148, 163, 184, 0.75)'  // Slate
   ];
 
+  const sliceBorder = doughnutSliceBorder();
   const ctx = document.getElementById('chart-content-types').getContext('2d');
   charts.contentTypes = new Chart(ctx, {
     type: 'doughnut',
@@ -1379,8 +1408,8 @@ function renderContentTypeChart() {
       datasets: [{
         data: sorted.map(item => item[1]),
         backgroundColor: sorted.map((_, i) => palette[i % palette.length]),
-        borderColor: 'rgba(15, 23, 42, 0.8)',
-        borderWidth: 1.5,
+        borderColor: sliceBorder.color,
+        borderWidth: sliceBorder.width,
         hoverOffset: 6
       }]
     },
@@ -1467,6 +1496,7 @@ function renderProtocolChart() {
     'rgba(148, 163, 184, 0.75)'  // Slate
   ];
 
+  const sliceBorder = doughnutSliceBorder();
   const ctx = document.getElementById('chart-protocols').getContext('2d');
   charts.protocols = new Chart(ctx, {
     type: 'doughnut',
@@ -1475,8 +1505,8 @@ function renderProtocolChart() {
       datasets: [{
         data: sorted.map(item => item[1]),
         backgroundColor: sorted.map((_, i) => palette[i % palette.length]),
-        borderColor: 'rgba(15, 23, 42, 0.8)',
-        borderWidth: 1.5,
+        borderColor: sliceBorder.color,
+        borderWidth: sliceBorder.width,
         hoverOffset: 6
       }]
     },
@@ -1581,6 +1611,7 @@ function renderSecurity() {
   ];
 
   if (sortedCategories.length > 0) {
+    const sliceBorder = doughnutSliceBorder();
     const ctx = document.getElementById('chart-threats').getContext('2d');
     charts.threats = new Chart(ctx, {
       type: 'doughnut',
@@ -1589,8 +1620,8 @@ function renderSecurity() {
         datasets: [{
           data: sortedCategories.map(item => item[1]),
           backgroundColor: sortedCategories.map((_, i) => threatPalette[i % threatPalette.length]),
-          borderColor: 'rgba(15, 23, 42, 0.8)',
-          borderWidth: 1.5,
+          borderColor: sliceBorder.color,
+          borderWidth: sliceBorder.width,
           hoverOffset: 6
         }]
       },
@@ -1600,7 +1631,7 @@ function renderSecurity() {
         plugins: {
           legend: {
             position: 'bottom',
-            labels: { boxWidth: 12, padding: 10 }
+            labels: { boxWidth: 12, padding: 12 }
           }
         }
       }

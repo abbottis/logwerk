@@ -45,6 +45,7 @@ Heavyweight stacks (ELK, Grafana Loki, GoAccess) need setup and maintenance; clo
 - **CSV export**: Export the currently filtered result set.
 - **Reload persistence**: The last loaded log is cached in IndexedDB and automatically restored on refresh.
 - **Multilingual UI**: English, German, French, Spanish, Italian, and Ukrainian, fully translated and switchable at runtime.
+- **Light & dark mode**: Switch themes with one click in the header. Follows your OS preference on first visit, remembers your choice, and recolors the charts to match.
 
 ## How to Start
 
